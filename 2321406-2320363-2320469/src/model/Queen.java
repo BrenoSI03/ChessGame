@@ -1,6 +1,6 @@
 package model;
 
-class Queen extends Piece {
+class Queen extends Piece implements Serializable{
 
     // Constrói uma rainha branca ou preta
     public Queen(boolean isWhite) {
