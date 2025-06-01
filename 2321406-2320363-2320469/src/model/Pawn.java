@@ -1,6 +1,6 @@
 package model;
 
-class Pawn extends Piece {
+class Pawn extends Piece implements Serializable{
 
     // Constrói um peão branco ou preto
     public Pawn(boolean isWhite) {
