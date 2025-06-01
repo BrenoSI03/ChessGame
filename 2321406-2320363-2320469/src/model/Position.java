@@ -1,7 +1,7 @@
 package model;
 
 // Representa uma posição no tabuleiro de xadrez (linha e coluna de 0 a 7)
-class Position {
+class Position implements Serializable{
 
     public final int row;
     public final int col;
