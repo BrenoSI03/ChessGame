@@ -305,4 +305,9 @@ public class ChessModel {
         }
         return validMoves;
     }
+
+    public String toFEN() {
+        return board.toFEN() + 
+           " " + (whiteTurn ? "w" : "b") + " KQkq - 0 1";
+    }
 }
