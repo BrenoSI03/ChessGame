@@ -1,6 +1,6 @@
 package model;
 
-class Bishop extends Piece {
+class Bishop extends Piece implements Serializable{
 
     // Constrói um bispo branco ou preto
     public Bishop(boolean isWhite) {
