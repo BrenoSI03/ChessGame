@@ -1,6 +1,6 @@
 package model;
 
-abstract class Piece {
+abstract class Piece implements Serializable{
     protected boolean isWhite;
 
     // Construtor base para todas as peças, define se é branca ou preta
