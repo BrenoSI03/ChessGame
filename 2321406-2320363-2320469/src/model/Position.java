@@ -1,5 +1,7 @@
 package model;
 
+import java.io.Serializable;
+
 // Representa uma posição no tabuleiro de xadrez (linha e coluna de 0 a 7)
 class Position implements Serializable{
 
