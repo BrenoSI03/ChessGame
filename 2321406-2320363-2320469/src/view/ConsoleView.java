@@ -1,6 +1,7 @@
 package view;
 
 import controller.GameController;
+import controller.MovementController;
 import model.ChessModel;
 
 import javax.swing.*;
@@ -10,7 +11,7 @@ import java.awt.event.ActionListener;
 public class ConsoleView extends JFrame {
     private ChessModel model;
     private GameView gameView;
-    private GameController controller;
+    private GameController gameController;
 
     public ConsoleView() {
         super("Jogo de Xadrez");
@@ -18,40 +19,49 @@ public class ConsoleView extends JFrame {
         setSize(660, 700);
         setLocationRelativeTo(null);
 
-        model = ChessModel.getInstance(); 
-        controller = new GameController(model);
-        gameView = new GameView(model);
-        controller.setGameView(gameView); 
-
-        setJMenuBar(createMenuBar());
-        add(gameView);
+        initializeModel();
+        initializeViewAndControllers();
+        setupMenu();
 
         setVisible(true);
     }
 
-    private JMenuBar createMenuBar() {
+    private void initializeModel() {
+        model = ChessModel.getInstance();
+    }
+
+    private void initializeViewAndControllers() {
+        gameView = new GameView(model);
+        gameController = new GameController(model);
+        new MovementController(model, gameView); // Controller de movimentação
+        gameController.setGameView(gameView);
+        add(gameView);
+    }
+
+    private void setupMenu() {
         JMenuBar menuBar = new JMenuBar();
+        JMenu gameMenu = new JMenu("Jogo");
 
-        JMenu jogoMenu = new JMenu("Jogo");
+        JMenuItem newGameItem = new JMenuItem("Nova Partida");
+        newGameItem.addActionListener(e -> resetGame());
 
-        JMenuItem novaPartida = new JMenuItem("Nova Partida");
-        novaPartida.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                ChessModel.resetInstance(); // reinicia o modelo
-                model = ChessModel.getInstance(); // recria nova instância
-                gameView.setModel(model); // atualiza model na view
-                gameView.repaint();
-            }
-        });
+        JMenuItem loadGameItem = new JMenuItem("Carregar Partida...");
+        loadGameItem.setEnabled(false); // Para 4ª iteração
 
-        JMenuItem carregarPartida = new JMenuItem("Carregar Partida...");
-        carregarPartida.setEnabled(false); // só será usado na 4ª iteração
+        gameMenu.add(newGameItem);
+        gameMenu.add(loadGameItem);
+        menuBar.add(gameMenu);
+        setJMenuBar(menuBar);
+    }
 
-        jogoMenu.add(novaPartida);
-        jogoMenu.add(carregarPartida);
-        menuBar.add(jogoMenu);
+    private void resetGame() {
+        ChessModel.resetInstance();
+        model = ChessModel.getInstance();
+        gameView.setModel(model);
+        gameView.repaint();
+    }
 
-        return menuBar;
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new ConsoleView());
     }
 }
