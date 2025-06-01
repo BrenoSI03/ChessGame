@@ -1,5 +1,7 @@
 package model;
 
+import java.io.Serializable;
+
 abstract class Piece implements Serializable{
     protected boolean isWhite;
 
