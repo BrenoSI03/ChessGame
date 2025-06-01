@@ -1,6 +1,6 @@
 package model;
 
-class Rook extends Piece {
+class Rook extends Piece implements Serializable{
 
     // Constrói uma torre branca ou preta
     public Rook(boolean isWhite) {
