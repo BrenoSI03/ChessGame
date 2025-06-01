@@ -79,5 +79,37 @@ class Board {
     public boolean isEmpty(int row, int col) {
         return board[row][col] == null;
     }
-
+    
+    public String toFEN() {
+        StringBuilder fen = new StringBuilder();
+        for (int row = 0; row < 8; row++) {
+            int empty = 0;
+            for (int col = 0; col < 8; col++) {
+                Piece p = board[row][col];
+                if (p == null) {
+                    empty++;
+                } else {
+                    if (empty > 0) {
+                        fen.append(empty);
+                        empty = 0;
+                    }
+                    fen.append(getFENSymbol(p));
+                }
+            }
+            if (empty > 0) fen.append(empty);
+            if (row < 7) fen.append("/");
+        }
+        return fen.toString();
+    }
+    
+    private char getFENSymbol(Piece p) {
+        char c = ' ';
+        if (p instanceof Pawn) c = 'p';
+        else if (p instanceof Rook) c = 'r';
+        else if (p instanceof Knight) c = 'n';
+        else if (p instanceof Bishop) c = 'b';
+        else if (p instanceof Queen) c = 'q';
+        else if (p instanceof King) c = 'k';
+        return p.isWhite() ? Character.toUpperCase(c) : c;
+    }
 }
