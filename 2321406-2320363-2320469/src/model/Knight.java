@@ -1,6 +1,6 @@
 package model;
 
-class Knight extends Piece {
+class Knight extends Piece implements Serializable{
 
     // Constrói um cavalo branco ou preto
     public Knight(boolean isWhite) {
