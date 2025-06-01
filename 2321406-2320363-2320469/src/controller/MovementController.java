@@ -39,8 +39,24 @@ public class MovementController {
     }
 
     private void handleRightClick() {
-        // TODO: Implementar salvamento na 4ª iteração
-        System.out.println("Botão direito clicado - Salvamento será implementado na 4ª iteração");
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Salvar Partida em FEN");
+        
+        if (fileChooser.showSaveDialog(view) == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+                writer.write(model.toFEN());
+                JOptionPane.showMessageDialog(view, 
+                    "Partida salva como:\n" + model.toFEN(), 
+                    "Salvo com sucesso", 
+                    JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(view, 
+                    "Erro ao salvar: " + ex.getMessage(), 
+                    "Erro", 
+                    JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 
     private void handleBoardClick(int row, int col) {
