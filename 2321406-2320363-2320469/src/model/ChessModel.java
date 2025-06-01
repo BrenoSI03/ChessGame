@@ -220,7 +220,6 @@ public class ChessModel {
         return false;
     }
     
-    
     /**
      * Realiza a promoção de um peão que alcançou a última linha do tabuleiro.
      * A nova peça é escolhida com base no tipo passado como argumento.
@@ -253,7 +252,6 @@ public class ChessModel {
         return true;
     }
 
-    
     /**
      * Verifica se há uma promoção de peão pendente.
      * Isso indica que o jogador deve escolher uma peça para substituir o peão promovido.
@@ -286,6 +284,25 @@ public class ChessModel {
             }
         }
 
+        return validMoves;
+    }
+    
+    public List<Position> getValidMovesForPiece(Position from) {
+        List<Position> validMoves = new ArrayList<>();
+        Piece piece = board.getPiece(from.row, from.col);
+        
+        if (piece == null || piece.isWhite() != whiteTurn) {
+            return validMoves;
+        }
+    
+        for (int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
+                Position to = new Position(row, col);
+                if (piece.isValidMove(from, to, board) && canMoveToEscapeCheck(from, to)) {
+                    validMoves.add(to);
+                }
+            }
+        }
         return validMoves;
     }
 }
