@@ -2,6 +2,8 @@ package view;
 
 import controller.GameController;
 import model.ChessModel;
+import model.ObservadorIF;
+import model.ObservadoIF;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -31,6 +33,7 @@ public class GameView extends JPanel {
     private int selectedRow = -1;  // Linha da peça selecionada
     private int selectedCol = -1;  // Coluna da peça selecionada
     private boolean promotionMenuVisible = false;
+    private ChessViewFacade facade;
 
     /**
      * Construtor que inicializa o painel gráfico do tabuleiro.
@@ -39,23 +42,24 @@ public class GameView extends JPanel {
     public GameView(ChessModel model) {
         this.model = model;
         this.images = new Image[codes.length];
+        this.facade = new ChessViewFacade(this);
+        model.addObservador(facade);
         setPreferredSize(new Dimension(TILE_SIZE * BOARD_SIZE, TILE_SIZE * BOARD_SIZE));
         loadImages(); // Carrega imagens das peças
 
         // Adiciona listener de mouse para tratar seleção e movimentação de peças
         addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent e) {
-            	
-            	if (SwingUtilities.isRightMouseButton(e)) {
+                
+                if (SwingUtilities.isRightMouseButton(e)) {
                     showContextMenu(e.getX(), e.getY());
                     return;
                 }
-            	
+                
                 int col = e.getX() / TILE_SIZE;
                 int row = e.getY() / TILE_SIZE;
 
-                if (model.hasPendingPromotion()) 
-                {
+                if (model.hasPendingPromotion()) {
                     showPromotionMenu(e.getX(), e.getY());
                     return;
                 }
@@ -91,19 +95,27 @@ public class GameView extends JPanel {
         });
     }
 
+    /**
+     * Método chamado pelo facade para atualizar a view quando o modelo muda
+     */
+    public void updateView() {
+        validMoves.clear();
+        selectedRow = -1;
+        selectedCol = -1;
+        repaint();
+    }
 
-     // Define o controller
+    // Define o controller
     public void setController(GameController controller) {
         this.controller = controller;
     }
     
 
-     // Exibe o menu de promoção de peão ao chegar na última linha.
+    // Exibe o menu de promoção de peão ao chegar na última linha.
     private void showPromotionMenu(int x, int y) {
         JPopupMenu menu = new JPopupMenu();
         String[] options = {"Queen", "Rook", "Bishop", "Knight"};
-        for (String opt : options) 
-        {
+        for (String opt : options) {
             JMenuItem item = new JMenuItem(opt);
             item.addActionListener(e -> {
                 if (controller != null) {
@@ -178,7 +190,13 @@ public class GameView extends JPanel {
      * @param model nova instância do modelo do jogo
      */
     public void setModel(ChessModel model) {
+        if (this.model != null) {
+            this.model.removeObservador(facade);
+        }
         this.model = model;
+        if (model != null) {
+            model.addObservador(facade);
+        }
         repaint();
     }
     
