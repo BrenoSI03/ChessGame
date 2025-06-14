@@ -7,14 +7,14 @@ import java.util.List;
  * Classe principal que representa o modelo do jogo de xadrez (ChessModel).
  * Controla o estado do tabuleiro, o turno atual e as regras básicas de movimentação e cheque.
  */
-public class ChessModel {
+public class ChessModel implements ObservadoIF {
     private static ChessModel instance;
     private Board board;
     private boolean whiteTurn = true;
     private Position selectedPiecePos = null;
     private Position pendingPromotionPos = null;  // se != null, há promoção pendente
     private Position enPassantTarget = null; // Posição do peão que pode ser capturado por en passant (válido apenas no turno seguinte)
-    
+    private List<ObservadorIF> observadores = new ArrayList<>();
 
     // Construtor privado (padrão Singleton). Inicializa o tabuleiro com a configuração padrão.
     private ChessModel() {
@@ -34,9 +34,27 @@ public class ChessModel {
         instance = null;
     }
 
+    @Override
+    public void addObservador(ObservadorIF o) {
+        observadores.add(o);
+    }
+
+    @Override
+    public void removeObservador(ObservadorIF o) {
+        observadores.remove(o);
+    }
+
+    @Override
+    public void notificarObservadores() {
+        for (ObservadorIF o : observadores) {
+            o.notificar(this);
+        }
+    }
+
     // Define um tabuleiro customizado. Usado para setups específicos ou testes.
     public void setBoard(Board customBoard) {
         this.board = customBoard;
+        notificarObservadores();
     }
 
     // Retorna o tabuleiro atual do modelo.
@@ -76,7 +94,6 @@ public class ChessModel {
                 }
             }
 
-
             // Trata movimento especial: roque (movimenta a torre também)
             if (piece instanceof King && Math.abs(target.col - selectedPiecePos.col) == 2) {
                 int rookCol   = (target.col > selectedPiecePos.col) ? 7 : 0;
@@ -94,10 +111,10 @@ public class ChessModel {
                 pendingPromotionPos = null;
                 enPassantTarget = null;
                 whiteTurn = !whiteTurn;
+                notificarObservadores();
                 return true;
             }
             
-
             // Atualiza a posição de en passant, se for um peão que se moveu duas casas
             if (piece instanceof Pawn) {
                 if (Math.abs(target.row - selectedPiecePos.row) == 2) {
@@ -115,6 +132,7 @@ public class ChessModel {
                     board.movePiece(selectedPiecePos, target);  // Move peão para a última linha
                     pendingPromotionPos = target;
                     selectedPiecePos = null;
+                    notificarObservadores();
                     return true;
                 }
             }
@@ -124,12 +142,11 @@ public class ChessModel {
 
             selectedPiecePos = null;
             whiteTurn = !whiteTurn;
+            notificarObservadores();
             return true;
         }
         return false;
     }
-
-
 
     // Verifica se o rei da cor indicada está em cheque.
     // A função percorre o tabuleiro procurando por ameaças ao rei.
@@ -190,13 +207,6 @@ public class ChessModel {
         return whiteTurn;
     }
 
-    /**
-     * Retorna o código da peça localizada em uma determinada posição do tabuleiro.
-     * O código é composto por uma letra indicando a cor ('w' para branco, 'b' para preto)
-     * seguida pela letra inicial do tipo da peça em minúsculo.
-     * Exemplo: "wp" para peão branco, "bk" para rei preto.
-     * A letra do cavalo (Knight) é representada por 'n' para evitar conflito com o rei (King).
-     */
     public String getPieceCode(int row, int col) {
         Piece piece = board.getPiece(row, col);
         if (piece == null) return null;
@@ -211,12 +221,6 @@ public class ChessModel {
         return cor + tipo;
     }
 
-    /**
-     * Verifica se o jogador da vez está em situação de xeque-mate.
-     * Para isso, primeiro verifica se o rei está em cheque.
-     * Se estiver, e se não houver nenhum movimento legal que possa livrar o jogador do cheque,
-     * então a partida terminou em xeque-mate.
-     */
     public boolean isCheckMate() {
         boolean isWhite = whiteTurn;
         if (!isInCheck(isWhite)) {
@@ -225,11 +229,6 @@ public class ChessModel {
         return !hasAnyLegalMove(isWhite);
     }
 
-    /**
-     * Verifica se o jogador da vez está em situação de afogamento (stalemate).
-     * Isso ocorre quando o jogador não está em cheque, mas também não possui
-     * nenhum movimento legal possível — o que caracteriza um empate.
-     */
     public boolean isStalelMate() {
         boolean isWhite = whiteTurn;
         if (isInCheck(isWhite)) {
@@ -238,12 +237,6 @@ public class ChessModel {
         return !hasAnyLegalMove(isWhite);
     }
 
-    /**
-     * Verifica se o jogador da vez possui ao menos um movimento legal disponível.
-     * Percorre todas as peças do jogador no tabuleiro, testando todos os movimentos possíveis.
-     * Se existir ao menos um movimento válido que não coloque o próprio rei em cheque,
-     * então o jogador ainda pode jogar.
-     */
     private boolean hasAnyLegalMove(boolean isWhite) {
         for (int row = 0; row < 8; row++) {
             for (int col = 0; col < 8; col++) {
@@ -266,12 +259,6 @@ public class ChessModel {
         return false;
     }
 
-    /**
-     * Realiza a promoção de um peão que alcançou a última linha do tabuleiro.
-     * A nova peça é escolhida com base no tipo passado como argumento.
-     * Após a promoção, a posição de promoção pendente é limpa e o turno muda para o outro jogador.
-     * Caso o tipo de peça fornecido seja inválido, uma exceção é lançada.
-     */
     public boolean promotePawn(String pieceType) {
         if (pendingPromotionPos == null) return false;
 
@@ -295,23 +282,14 @@ public class ChessModel {
         board.setPiece(pendingPromotionPos.row, pendingPromotionPos.col, newPiece);
         pendingPromotionPos = null;
         whiteTurn = !whiteTurn;
+        notificarObservadores();
         return true;
     }
 
-    /**
-     * Verifica se há uma promoção de peão pendente.
-     * Isso indica que o jogador deve escolher uma peça para substituir o peão promovido.
-     */
     public boolean hasPendingPromotion() {
         return pendingPromotionPos != null;
     }
 
-    /**
-     * Retorna a lista de movimentos válidos para uma peça em uma determinada posição.
-     * Considera tanto as regras individuais de movimentação da peça quanto a necessidade
-     * de o movimento não deixar o próprio rei em cheque.
-     * Caso a posição não contenha uma peça válida da vez, a lista retornada estará vazia.
-     */
     public List<int[]> getValidMovesForPiece(int row, int col) {
         List<int[]> validMoves = new ArrayList<>();
 
@@ -333,7 +311,6 @@ public class ChessModel {
         return validMoves;
     }
     
-    /**  Retorna true se o roque é legal; NÃO mexe no tabuleiro  */
     public boolean attemptCastling(Position kingPos, Position rookPos) {
         Piece king = board.getPiece(kingPos.row, kingPos.col);
         Piece rook = board.getPiece(rookPos.row, rookPos.col);
@@ -345,40 +322,29 @@ public class ChessModel {
 
         int dir = (rookPos.col > kingPos.col) ? 1 : -1;
 
-        // casas entre rei e torre devem estar vazias
         for (int c = kingPos.col + dir; c != rookPos.col; c += dir)
             if (!board.isEmpty(kingPos.row, c)) return false;
 
-        // rei não pode estar em cheque
         if (isInCheck(king.isWhite())) return false;
 
-        // nem pode atravessar casas atacadas
         for (int i = 1; i <= 2; i++) {
             Position step = new Position(kingPos.row, kingPos.col + i * dir);
             if (!canMoveToEscapeCheck(kingPos, step)) return false;
         }
-        return true;   // ←  só diz se pode
+        return true;
     }
-
-
     
-    // Retorna a posição atual válida para en passant, ou null se não houver
     public Position getEnPassantTarget() {
         return enPassantTarget;
     }
     
-    /**
-     * Define manualmente o alvo de en passant (usado principalmente para testes).
-     */
     public void setEnPassantTarget(Position pos) {
         this.enPassantTarget = pos;
     }
 
-    /**
-     * Força a definição do turno (branco ou preto). Usado apenas para testes.
-     */
     public void setWhiteTurn(boolean whiteTurn) {
         this.whiteTurn = whiteTurn;
+        notificarObservadores();
     }
 
     public String generateFEN() {
@@ -414,8 +380,6 @@ public class ChessModel {
 
         fen.append(' ');
         fen.append(whiteTurn ? 'w' : 'b');
-
-        // Por simplicidade: sem roque disponível, sem en passant, contadores zerados
         fen.append(" - - 0 1");
 
         return fen.toString();
@@ -443,9 +407,6 @@ public class ChessModel {
 
         String boardPart = parts[0];
         String turnPart = parts[1];
-        // Campos adicionais podem ser usados no futuro:
-        // String castlingRights = (parts.length > 2) ? parts[2] : "-";
-        // String enPassantTarget = (parts.length > 3) ? parts[3] : "-";
 
         board.clear();
         int row = 0, col = 0;
@@ -473,11 +434,6 @@ public class ChessModel {
         }
 
         this.whiteTurn = turnPart.equals("w");
+        notificarObservadores();
     }
 }
-/*
- * Observado: ter funcoes para gerenciar a lista de remover e adiconar da lista de eventos
- * Chamar um metodo no facade de adicionar observador
- * Observador vai notificar o sistema de eventos
- * Criar arquivos de observador e observado talvez ate em um pacote deles tudo publico
- */
