@@ -1,7 +1,7 @@
 package view;
 
-import model.ObservadoIF;
-import model.ObservadorIF;
+import controller.ObservadoIF;
+import controller.ObservadorIF;
 
 public class ChessViewFacade implements ObservadorIF {
     private GameView gameView;
