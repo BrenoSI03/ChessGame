@@ -1,5 +1,8 @@
 package view;
 
+import controller.ObservadoIF;
+import controller.ObservadorIF;
+
 import controller.GameController;
 import model.ChessModel;
 import model.ObservadorIF;
