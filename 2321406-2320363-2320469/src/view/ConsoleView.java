@@ -1,14 +1,13 @@
 package view;
 
-import controller.GameController;
-import model.ChessModel;
-
 import javax.swing.*;
+import java.awt.*;
+import java.io.*;
+import model.ChessModel;
+import model.ObservadorIF;
+import model.ObservadoIF;
+import controller.GameController;
 
-/**
- * Janela principal do jogo de xadrez (View do padrão MVC).
- * Exibe o tabuleiro e um menu de opções.
- */
 public class ConsoleView extends JFrame {
     private ChessModel model;
     private GameView gameView;
@@ -31,8 +30,16 @@ public class ConsoleView extends JFrame {
         this.controller.setGameView(gameView);
         this.gameView.setController(controller);
 
-        setJMenuBar(createMenuBar()); // cria o turnoLabel
-        updateTurn();                 // agora seguro
+        // Registra como observador para atualizar o turno
+        model.addObservador(new ObservadorIF() {
+            @Override
+            public void notificar(ObservadoIF observado) {
+                updateTurn();
+            }
+        });
+
+        setJMenuBar(createMenuBar());
+        updateTurn(); // Atualiza o turno inicial
         add(gameView);
 
         setVisible(true);
@@ -48,7 +55,6 @@ public class ConsoleView extends JFrame {
         JMenuItem newGame = new JMenuItem("Reiniciar Partida");
         newGame.addActionListener(e -> controller.restartGame());
 
-
         JMenuItem carregarPartida = new JMenuItem("Carregar Partida");
         carregarPartida.addActionListener(e -> carregarPartida());
 
@@ -56,7 +62,7 @@ public class ConsoleView extends JFrame {
         gameMenu.add(carregarPartida);
         menuBar.add(gameMenu);
 
-        turnoLabel = new JLabel(); // agora inicializada
+        turnoLabel = new JLabel();
         menuBar.add(turnoLabel);
 
         return menuBar;
@@ -66,9 +72,12 @@ public class ConsoleView extends JFrame {
      * Atualiza a label de turno no menu.
      */
     public void updateTurn() {
-        String cor = model.isWhiteTurn() ? "brancas" : "pretas";
-        turnoLabel.setText("Turno de " + cor);
+        SwingUtilities.invokeLater(() -> {
+            String cor = model.isWhiteTurn() ? "brancas" : "pretas";
+            turnoLabel.setText("Turno de " + cor);
+        });
     }
+
     public void setController(GameController controller) {
         this.controller = controller;
         if (gameView != null) {
@@ -80,6 +89,9 @@ public class ConsoleView extends JFrame {
     private void carregarPartida() {
         ChessModel newModel = controller.carregarPartidaViaArquivo(this);
         if (newModel != null) {
+            // Remove observador do modelo antigo
+            model.removeObservador(controller);
+            
             this.model = newModel;
 
             // Remove o GameView antigo
@@ -94,6 +106,14 @@ public class ConsoleView extends JFrame {
             controller.setGameView(gameView);
             gameView.setController(controller);
 
+            // Adiciona observador para o novo modelo
+            newModel.addObservador(new ObservadorIF() {
+                @Override
+                public void notificar(ObservadoIF observado) {
+                    updateTurn();
+                }
+            });
+
             // Adiciona o novo GameView na tela
             add(gameView);
 
@@ -104,7 +124,22 @@ public class ConsoleView extends JFrame {
     }
     
     public void setModel(ChessModel model) {
+        // Remove observador do modelo antigo
+        if (this.model != null) {
+            this.model.removeObservador(controller);
+        }
+        
         this.model = model;
+        
+        // Adiciona observador para o novo modelo
+        if (model != null) {
+            model.addObservador(new ObservadorIF() {
+                @Override
+                public void notificar(ObservadoIF observado) {
+                    updateTurn();
+                }
+            });
+        }
     }
     
     public void setGameView(GameView gameView) {
@@ -116,6 +151,4 @@ public class ConsoleView extends JFrame {
         revalidate();
         repaint();
     }
-
-
 }
