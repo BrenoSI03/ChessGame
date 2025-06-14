@@ -1,5 +1,8 @@
 package view;
 
+import controller.ObservadoIF;
+import controller.ObservadorIF;
+
 import javax.swing.*;
 import java.awt.*;
 import java.io.*;
